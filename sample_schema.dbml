@@ -1,7 +1,7 @@
-Project "Cleaned DB Documentation" {
+Project DeliveryDB {
   database_type: 'PostgreSQL'
   Note: '''
-    # Cleaned DB Documentation
+    # DeliveryDB Documentation
     **Database schema for a delivery management system**
     
     This schema represents a delivery management system where:
