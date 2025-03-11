@@ -1,7 +1,7 @@
 Project "Cleaned DB Documentation" {
   database_type: 'PostgreSQL'
   Note: '''
-    # Manus Delivery System
+    # Cleaned DB Documentation
     **Database schema for a delivery management system**
     
     This schema represents a delivery management system where:
