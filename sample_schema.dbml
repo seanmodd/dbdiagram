@@ -1,113 +1,210 @@
-Project TaskManagement {
+Project ManusDelivery {
   database_type: 'PostgreSQL'
   Note: '''
-    # Task Management System
-    **A simple task management system database schema**
+    # Manus Delivery System
+    **Database schema for a delivery management system**
     
-    This schema represents a task management application where:
-    - Users can create and manage tasks
-    - Tasks can be organized into projects
-    - Tasks can have comments and attachments
-    - Tasks can be assigned to team members
+    This schema represents a delivery management system where:
+    - Drivers can be assigned to delivery orders
+    - Customers can place orders for delivery services
+    - Dispatchers manage order assignments
+    - Orders track the entire delivery lifecycle
   '''
 }
 
-Table users {
+Table drivers {
   id int [pk, increment]
-  username varchar [not null, unique]
-  email varchar [not null, unique]
-  password_hash varchar [not null]
-  full_name varchar
-  created_at timestamp [default: `now()`]
+  first_name varchar(50)
+  last_name varchar(20)
+  email varchar(100)
+  phone varchar(20)
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp
+  city varchar(30)
+  state varchar(30)
+  legal_address varchar(100)
+  last_login_at timestamp
+  last_location_date timestamp
+  status varchar(20) [note: 'Can be: Available, Busy, Offline']
+  is_live boolean [default: true]
+  is_busy boolean
+  orders_completed int
+  
+  note: "Stores driver information"
+}
+
+Table driver_vehicles {
+  id int [pk, increment]
+  driver_id int [ref: > drivers.id]
+  vehicle_plate varchar(30)
+  vehicle_type varchar(30)
+  vehicle_make varchar(30)
+  vehicle_model varchar(30)
+  vehicle_year varchar(30)
+  
+  note: "Vehicles associated with drivers"
+}
+
+Table driver_activities {
+  id int [pk, increment]
+  order_id int
+  driver_id int [ref: > drivers.id]
+  event_type varchar(30) [note: 'Can be: order_accepted, arrived_at_pickup, loading_started, loading_completed, departed_pickup, arrived_at_delivery, delivery_completed']
+  event_timestamp timestamp
+  notes text
+  created_at timestamp
+  updated_at timestamp
+  app_status varchar(10) [note: 'Can be: live, away']
+  order_status varchar(10) [note: 'Can be: accepted, waiting, rejected']
+  full_address varchar(60)
+  latitude numeric
+  longitude numeric
+  coordinates varchar(50)
+  
+  note: "Tracks driver activities during deliveries"
+}
+
+Table customers {
+  id int [pk, increment]
+  company_id int [ref: > companies.id]
+  preferred_payment_method_id int [ref: > payment_methods.id]
+  first_name varchar(20)
+  last_name varchar(20)
+  email varchar(50)
+  phone varchar(50)
+  status varchar(15) [note: 'Can be: active, suspended, deactivated']
+  default_address varchar(50)
+  notes varchar(50)
+  total_orders int
+  created_at timestamp
+  updated_at timestamp
+  last_login_at timestamp
+  marketing_opt_in boolean
+  customer_type varchar(15) [note: 'Can be: individual, business']
+  
+  note: "Customer information"
+}
+
+Table payment_methods {
+  id int [pk, increment]
+  customer_id int [ref: > customers.id]
+  last_four_digits numeric(4,0)
+  expiration_date timestamp
+  is_default boolean
+  created_at timestamp
   updated_at timestamp
   
-  note: "Stores user account information"
+  note: "Payment methods for customers"
 }
 
-Table projects {
+Table companies {
   id int [pk, increment]
-  name varchar [not null]
-  description text
-  owner_id int [ref: > users.id, not null]
-  created_at timestamp [default: `now()`]
+  name varchar(20)
+  address varchar(20)
+  website varchar(20)
+  created_at timestamp
   updated_at timestamp
   
-  note: "Contains project information"
+  note: "Business customer companies"
 }
 
-Table tasks {
+Table profiles {
   id int [pk, increment]
-  title varchar [not null]
-  description text
-  status task_status [not null, default: 'pending']
-  priority task_priority [not null, default: 'medium']
-  due_date timestamp
-  project_id int [ref: > projects.id]
-  created_by int [ref: > users.id, not null]
-  assigned_to int [ref: > users.id]
-  created_at timestamp [default: `now()`]
+  full_name varchar(50)
+  role varchar(30)
+  preferred_role varchar(15) [note: 'Can be: dispatcher, driver, admin']
+  first_name varchar(30)
+  last_name varchar(30)
+  created_at timestamp
+  username varchar(30) [unique]
+  email varchar(50) [unique]
+  
+  note: "User profiles for the system"
+}
+
+Table dispatchers {
+  id int [pk, increment]
+  profile_id int [ref: > profiles.id]
+  username varchar(30)
+  created_at timestamp
   updated_at timestamp
+  last_login_at timestamp
   
-  note: "Stores task information"
+  note: "Dispatcher information"
 }
 
-Table comments {
+Table order_types {
   id int [pk, increment]
-  task_id int [ref: > tasks.id, not null]
-  user_id int [ref: > users.id, not null]
-  content text [not null]
-  created_at timestamp [default: `now()`]
+  name varchar(30) [not null, unique]
+  description varchar(50)
+  
+  note: "Types of delivery orders"
+}
+
+Table locations {
+  id int [pk, increment]
+  driver_id int [ref: > drivers.id]
+  full_address varchar(100)
+  street varchar(100)
+  city varchar(20)
+  state varchar(20)
+  postal_code varchar(20)
+  country varchar(20)
+  latitude numeric
+  longitude numeric
+  location_type varchar(25) [note: 'Can be: pickup address, destination address, idle address']
+  contact_name varchar(30)
+  contact_number varchar(15)
+  
+  note: "Pickup and delivery locations"
+}
+
+Table promotions {
+  id int [pk, increment]
+  code varchar(30) [not null, unique]
+  discount_type varchar(15) [note: 'Can be: percentage, fixed']
+  discount_value numeric
+  valid_from date [not null]
+  valid_until date [not null]
+  
+  note: "Promotional discounts"
+}
+
+Table add_on_services {
+  id int [pk, increment]
+  name varchar(40) [not null]
+  description varchar(40)
+  additional_cost numeric
+  created_at timestamp
+  
+  note: "Additional services that can be added to orders"
+}
+
+Table orders {
+  id int [pk, increment]
+  customer_id int [not null, ref: > customers.id]
+  order_type_id int [not null, ref: > order_types.id]
+  dispatcher_id int [ref: > dispatchers.id]
+  driver_id int [ref: > drivers.id]
+  pickup_location_id int [not null, ref: > locations.id]
+  destination_location_id int [not null, ref: > locations.id]
+  promotion_id int [ref: > promotions.id]
+  payment_method_id int [ref: > payment_methods.id]
+  order_description varchar(50)
+  delivery_instructions varchar(100)
+  base_delivery_cost decimal(10,2)
+  scheduled_pickup_time timestamp
+  scheduled_delivery_time timestamp
+  order_status varchar(20) [not null, note: 'Can be: pending, assigned, in_progress, delivered, cancelled']
+  created_at timestamp
   updated_at timestamp
+  customer_rating decimal(3,2)
+  cancellation_reason varchar(40)
+  estimated_duration decimal(10,2)
+  actual_duration decimal(10,2)
+  reference_number varchar(40)
   
-  note: "Task comments"
+  note: "Delivery orders"
 }
 
-Table attachments {
-  id int [pk, increment]
-  task_id int [ref: > tasks.id, not null]
-  user_id int [ref: > users.id, not null]
-  file_name varchar [not null]
-  file_path varchar [not null]
-  file_size int [not null]
-  file_type varchar [not null]
-  created_at timestamp [default: `now()`]
-  
-  note: "Files attached to tasks"
-}
-
-Table project_members {
-  project_id int [ref: > projects.id, not null]
-  user_id int [ref: > users.id, not null]
-  role project_role [not null, default: 'member']
-  joined_at timestamp [default: `now()`]
-  
-  indexes {
-    (project_id, user_id) [pk]
-  }
-  
-  note: "Tracks project membership"
-}
-
-Enum task_status {
-  pending [note: 'Task not yet started']
-  in_progress [note: 'Task is currently being worked on']
-  review [note: 'Task is under review']
-  completed [note: 'Task has been completed']
-  cancelled [note: 'Task has been cancelled']
-}
-
-Enum task_priority {
-  low [note: 'Low priority']
-  medium [note: 'Medium priority']
-  high [note: 'High priority']
-  urgent [note: 'Urgent priority']
-}
-
-Enum project_role {
-  owner [note: 'Project owner']
-  admin [note: 'Project administrator']
-  member [note: 'Regular project member']
-  guest [note: 'Guest with limited access']
-}
-
-// No additional references needed as they're already defined inline
+// Note: Circular references between customers and payment_methods are handled in DBML
