@@ -1,4 +1,4 @@
-Project ManusDelivery {
+Project "Cleaned DB Documentation" {
   database_type: 'PostgreSQL'
   Note: '''
     # Manus Delivery System
