@@ -1,0 +1,113 @@
+Project TaskManagement {
+  database_type: 'PostgreSQL'
+  Note: '''
+    # Task Management System
+    **A simple task management system database schema**
+    
+    This schema represents a task management application where:
+    - Users can create and manage tasks
+    - Tasks can be organized into projects
+    - Tasks can have comments and attachments
+    - Tasks can be assigned to team members
+  '''
+}
+
+Table users {
+  id int [pk, increment]
+  username varchar [not null, unique]
+  email varchar [not null, unique]
+  password_hash varchar [not null]
+  full_name varchar
+  created_at timestamp [default: `now()`]
+  updated_at timestamp
+  
+  note: "Stores user account information"
+}
+
+Table projects {
+  id int [pk, increment]
+  name varchar [not null]
+  description text
+  owner_id int [ref: > users.id, not null]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp
+  
+  note: "Contains project information"
+}
+
+Table tasks {
+  id int [pk, increment]
+  title varchar [not null]
+  description text
+  status task_status [not null, default: 'pending']
+  priority task_priority [not null, default: 'medium']
+  due_date timestamp
+  project_id int [ref: > projects.id]
+  created_by int [ref: > users.id, not null]
+  assigned_to int [ref: > users.id]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp
+  
+  note: "Stores task information"
+}
+
+Table comments {
+  id int [pk, increment]
+  task_id int [ref: > tasks.id, not null]
+  user_id int [ref: > users.id, not null]
+  content text [not null]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp
+  
+  note: "Task comments"
+}
+
+Table attachments {
+  id int [pk, increment]
+  task_id int [ref: > tasks.id, not null]
+  user_id int [ref: > users.id, not null]
+  file_name varchar [not null]
+  file_path varchar [not null]
+  file_size int [not null]
+  file_type varchar [not null]
+  created_at timestamp [default: `now()`]
+  
+  note: "Files attached to tasks"
+}
+
+Table project_members {
+  project_id int [ref: > projects.id, not null]
+  user_id int [ref: > users.id, not null]
+  role project_role [not null, default: 'member']
+  joined_at timestamp [default: `now()`]
+  
+  indexes {
+    (project_id, user_id) [pk]
+  }
+  
+  note: "Tracks project membership"
+}
+
+Enum task_status {
+  pending [note: 'Task not yet started']
+  in_progress [note: 'Task is currently being worked on']
+  review [note: 'Task is under review']
+  completed [note: 'Task has been completed']
+  cancelled [note: 'Task has been cancelled']
+}
+
+Enum task_priority {
+  low [note: 'Low priority']
+  medium [note: 'Medium priority']
+  high [note: 'High priority']
+  urgent [note: 'Urgent priority']
+}
+
+Enum project_role {
+  owner [note: 'Project owner']
+  admin [note: 'Project administrator']
+  member [note: 'Regular project member']
+  guest [note: 'Guest with limited access']
+}
+
+// No additional references needed as they're already defined inline
